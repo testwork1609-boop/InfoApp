@@ -2,14 +2,5 @@
   "users": [
     { "login": "admin", "haslo": "nimda", "rola": "admin" }
   ],
-  "ogloszenia": [
-    {
-      "id": "1",
-      "tytul": "Witaj w InfoApp!",
-      "tresc": "Tablica informacyjna gotowa do użytku. Zaloguj się jako administrator, aby dodawać i usuwać ogłoszenia.",
-      "autor": "System",
-      "wazne": true,
-      "data": "2026-10-13"
-    }
-  ]
+ "ogloszenia": []
 }
