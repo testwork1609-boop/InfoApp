@@ -1,23 +1,14 @@
 {
   "users": [
-    { "login": "admin", "haslo": "admin123", "rola": "admin" },
-    { "login": "user", "haslo": "user123", "rola": "user" }
+    { "login": "admin", "haslo": "admin123", "rola": "admin" }
   ],
   "ogloszenia": [
     {
       "id": "1",
       "tytul": "Witaj w InfoApp!",
-      "tresc": "To Twoje pierwsze ogloszenie w tablicy informacyjnej.",
-      "autor": "admin",
+      "tresc": "Tablica informacyjna gotowa do użytku. Zaloguj się jako administrator, aby dodawać i usuwać ogłoszenia.",
+      "autor": "System",
       "wazne": true,
-      "data": "2026-10-13"
-    },
-    {
-      "id": "2",
-      "tytul": "Zebranie",
-      "tresc": "W piatek o 15:00 w sali 204.",
-      "autor": "admin",
-      "wazne": false,
       "data": "2026-10-13"
     }
   ]
