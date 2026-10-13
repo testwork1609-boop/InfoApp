@@ -14,7 +14,7 @@ data class Ogloszenie(
     val id: String,
     val tytul: String,
     val tresc: String,
-    val autor: String,
+    val autor: String = "System",
     val wazne: Boolean = false,
     val data: String = ""
 )
@@ -27,6 +27,7 @@ data class AppData(
 class StorageManager(private val context: Context) {
     private val gson = Gson()
     private val file: File = File(context.filesDir, "infoapp_data.json")
+    private val cacheFile: File = File(context.filesDir, "infoapp_cache.json")
 
     fun load(): AppData {
         if (!file.exists()) {
@@ -53,6 +54,26 @@ class StorageManager(private val context: Context) {
             file.writeText(gson.toJson(data))
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun saveCache(ogloszenia: List<Ogloszenie>) {
+        try {
+            cacheFile.writeText(gson.toJson(ogloszenia))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun loadCache(): List<Ogloszenie> {
+        if (!cacheFile.exists()) return emptyList()
+        return try {
+            val type = com.google.gson.reflect.TypeToken.getParameterized(
+                List::class.java, Ogloszenie::class.java
+            ).type
+            gson.fromJson<List<Ogloszenie>>(cacheFile.readText(), type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }
