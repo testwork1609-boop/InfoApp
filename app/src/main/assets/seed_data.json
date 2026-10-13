@@ -1,6 +1,6 @@
 {
   "users": [
-    { "login": "admin", "haslo": "admin123", "rola": "admin" }
+    { "login": "admin", "haslo": "nimda", "rola": "admin" }
   ],
   "ogloszenia": [
     {
