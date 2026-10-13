@@ -7,15 +7,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -25,7 +26,11 @@ import java.util.*
 @Composable
 fun InfoAppScreen(
     appData: AppData,
+    zdalneOgloszenia: List<Ogloszenie>,
     isAdmin: Boolean,
+    ladowanie: Boolean,
+    blad: String?,
+    onOdswiez: () -> Unit,
     onLoginClick: () -> Unit,
     onLogout: () -> Unit,
     onDataChange: (AppData) -> Unit
@@ -39,20 +44,23 @@ fun InfoAppScreen(
                     Column {
                         Text("InfoApp", fontWeight = FontWeight.Bold)
                         Text(
-                            "Tablica informacyjna",
+                            if (ladowanie) "Pobieranie..." else "Tablica informacyjna",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOdswiez) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Odśwież",
+                            tint = Color.White
+                        )
+                    }
                     if (isAdmin) {
                         TextButton(onClick = onLogout) {
-                            Text(
-                                "Wyloguj",
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Text("Wyloguj", color = Color.White, fontWeight = FontWeight.Medium)
                         }
                     } else {
                         Button(
@@ -91,28 +99,68 @@ fun InfoAppScreen(
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (appData.ogloszenia.isEmpty()) {
-                EmptyState()
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(appData.ogloszenia.reversed()) { o ->
-                        OgloszenieCard(
-                            ogloszenie = o,
-                            isAdmin = isAdmin,
-                            onDelete = {
-                                val nowa = AppData(
-                                    users = appData.users,
-                                    ogloszenia = appData.ogloszenia
-                                        .filter { it.id != o.id }
-                                        .toMutableList()
-                                )
-                                onDataChange(nowa)
+            when {
+                ladowanie && zdalneOgloszenia.isEmpty() && appData.ogloszenia.isEmpty() -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                zdalneOgloszenia.isEmpty() && appData.ogloszenia.isEmpty() -> {
+                    EmptyState(blad)
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (blad != null) {
+                            item {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFFFF3E0)
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = Color(0xFFEF6C00)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "Brak połączenia – pokazuję ostatnie dane",
+                                            fontSize = 13.sp,
+                                            color = Color(0xFFEF6C00)
+                                        )
+                                    }
+                                }
                             }
-                        )
+                        }
+
+                        items(zdalneOgloszenia.reversed()) { o ->
+                            OgloszenieCard(ogloszenie = o, isAdmin = false, onDelete = {})
+                        }
+
+                        items(appData.ogloszenia.reversed()) { o ->
+                            OgloszenieCard(
+                                ogloszenie = o,
+                                isAdmin = isAdmin,
+                                onDelete = {
+                                    val nowa = AppData(
+                                        users = appData.users,
+                                        ogloszenia = appData.ogloszenia
+                                            .filter { it.id != o.id }
+                                            .toMutableList()
+                                    )
+                                    onDataChange(nowa)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -125,7 +173,7 @@ fun InfoAppScreen(
             onDodaj = { tytul, tresc, wazne ->
                 val data = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
                 val nowe = Ogloszenie(
-                    id = System.currentTimeMillis().toString(),
+                    id = "local_" + System.currentTimeMillis(),
                     tytul = tytul,
                     tresc = tresc,
                     autor = "admin",
@@ -144,7 +192,7 @@ fun InfoAppScreen(
 }
 
 @Composable
-private fun EmptyState() {
+private fun EmptyState(blad: String?) {
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,15 +208,15 @@ private fun EmptyState() {
         Text(
             "Brak informacji",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Nie ma jeszcze żadnych ogłoszeń.\nZaloguj się jako administrator, aby dodać pierwsze.",
+            if (blad != null) "Nie udało się pobrać danych: $blad"
+            else "Nie ma jeszcze żadnych ogłoszeń.",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -206,20 +254,12 @@ private fun OgloszenieCard(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         if (ogloszenie.wazne) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(Color(0xFFE53935), RoundedCornerShape(4.dp))
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    "WAŻNE",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFE53935)
-                                )
-                            }
+                            Text(
+                                "● WAŻNE",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE53935)
+                            )
                             Spacer(Modifier.height(6.dp))
                         }
                         Text(
@@ -247,26 +287,11 @@ private fun OgloszenieCard(
                     lineHeight = 20.sp
                 )
                 Spacer(Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        ogloszenie.autor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "•",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        ogloszenie.data,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    "${ogloszenie.autor} • ${ogloszenie.data}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -286,6 +311,12 @@ private fun DodajDialog(
         title = { Text("Nowe ogłoszenie", fontWeight = FontWeight.Bold) },
         text = {
             Column {
+                Text(
+                    "Dodawane lokalnie – widoczne tylko na tym tablecie.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = tytul,
                     onValueChange = { tytul = it },
@@ -302,27 +333,17 @@ private fun DodajDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = wazne,
-                        onCheckedChange = { wazne = it }
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = wazne, onCheckedChange = { wazne = it })
                     Text("Oznacz jako ważne", fontSize = 14.sp)
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (tytul.isNotBlank()) onDodaj(tytul, tresc, wazne)
-                },
+                onClick = { if (tytul.isNotBlank()) onDodaj(tytul, tresc, wazne) },
                 enabled = tytul.isNotBlank()
-            ) {
-                Text("Dodaj")
-            }
+            ) { Text("Dodaj") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Anuluj") }
