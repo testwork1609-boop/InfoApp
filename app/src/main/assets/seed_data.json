@@ -1,0 +1,24 @@
+{
+  "users": [
+    { "login": "admin", "haslo": "admin123", "rola": "admin" },
+    { "login": "user", "haslo": "user123", "rola": "user" }
+  ],
+  "ogloszenia": [
+    {
+      "id": "1",
+      "tytul": "Witaj w InfoApp!",
+      "tresc": "To Twoje pierwsze ogloszenie w tablicy informacyjnej.",
+      "autor": "admin",
+      "wazne": true,
+      "data": "2026-10-13"
+    },
+    {
+      "id": "2",
+      "tytul": "Zebranie",
+      "tresc": "W piatek o 15:00 w sali 204.",
+      "autor": "admin",
+      "wazne": false,
+      "data": "2026-10-13"
+    }
+  ]
+}
