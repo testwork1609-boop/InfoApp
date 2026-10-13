@@ -15,21 +15,28 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val storage = remember { StorageManager(context) }
                 var appData by remember { mutableStateOf(storage.load()) }
-                var zalogowany by remember { mutableStateOf<User?>(null) }
+                var isAdmin by remember { mutableStateOf(false) }
+                var pokazLogin by remember { mutableStateOf(false) }
 
-                if (zalogowany == null) {
-                    LoginScreen(users = appData.users) { user ->
-                        zalogowany = user
+                InfoAppScreen(
+                    appData = appData,
+                    isAdmin = isAdmin,
+                    onLoginClick = { pokazLogin = true },
+                    onLogout = { isAdmin = false },
+                    onDataChange = { nowe ->
+                        appData = nowe
+                        storage.save(nowe)
                     }
-                } else {
-                    InfoAppScreen(
-                        appData = appData,
-                        currentUser = zalogowany!!,
-                        onDataChange = { nowe ->
-                            appData = nowe
-                            storage.save(nowe)
+                )
+
+                if (pokazLogin) {
+                    LoginDialog(
+                        admin = appData.users.firstOrNull(),
+                        onSuccess = {
+                            isAdmin = true
+                            pokazLogin = false
                         },
-                        onLogout = { zalogowany = null }
+                        onDismiss = { pokazLogin = false }
                     )
                 }
             }
